@@ -1,6 +1,6 @@
-export type DocType = 'DESIGN_FEEDBACK' | 'MEETING_NOTES' | 'BUG_REPORT' | 'EMAIL_DRAFT' | 'LINKEDIN_POST' | 'TWEET_THREAD' | 'BLOG_POST';
+export type DocType = 'SUMMARY' | 'DESIGN_FEEDBACK' | 'MEETING_NOTES' | 'BUG_REPORT' | 'EMAIL_DRAFT' | 'LINKEDIN_POST' | 'TWEET_THREAD' | 'BLOG_POST';
 export type DocLength = 'CONCISE' | 'BALANCED' | 'DETAILED';
-export type WritingStyle = 'PROFESSIONAL' | 'CREATIVE' | 'DIRECT' | 'TECHNICAL';
+export type WritingStyle = 'CONVERSATIONAL' | 'PROFESSIONAL' | 'CREATIVE' | 'DIRECT' | 'TECHNICAL';
 
 export interface ProcessingConfig {
     docType: DocType;

@@ -14,7 +14,8 @@ import {
   MicrophoneIcon,
   StopIcon,
   ClockIcon,
-  ArchiveBoxIcon
+  ArchiveBoxIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/solid';
 
 // --- Components ---
@@ -122,6 +123,44 @@ const UpsellModal = ({ isOpen, onClose, onUpgrade, mode = 'UPGRADE' }: { isOpen:
   );
 };
 
+const CopyButton = ({ text }: { text: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleCopy = (mode: 'TEXT' | 'MARKDOWN') => {
+    navigator.clipboard.writeText(text);
+    setIsOpen(false);
+    // Toast logic could go here
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => handleCopy('TEXT')}
+        className="flex items-center gap-2 bg-oxide-red hover:bg-orange-700 text-white text-[10px] uppercase tracking-widest font-bold px-4 py-2 rounded-sm transition-colors"
+      >
+        Copy
+        <div
+          onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+          className="border-l border-white/20 pl-2 ml-1 hover:bg-white/10 h-full flex items-center"
+        >
+          <ChevronDownIcon className="w-3 h-3" />
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-1 w-32 bg-ink-surface border border-ink-border shadow-xl rounded-sm z-50 flex flex-col">
+          <button onClick={() => handleCopy('TEXT')} className="text-left px-3 py-2 text-[10px] uppercase font-bold text-paper-muted hover:text-paper-text hover:bg-ink-base transition-colors">
+            Plain Text
+          </button>
+          <button onClick={() => handleCopy('MARKDOWN')} className="text-left px-3 py-2 text-[10px] uppercase font-bold text-paper-muted hover:text-paper-text hover:bg-ink-base transition-colors">
+            Markdown
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // --- Main App ---
 
 export default function Home() {
@@ -144,12 +183,13 @@ export default function Home() {
 
   // Configuration
   const [config, setConfig] = useState<ProcessingConfig>({
-    docType: 'DESIGN_FEEDBACK',
-    length: 'DETAILED',
-    style: 'PROFESSIONAL'
+    docType: 'SUMMARY',
+    length: 'BALANCED',
+    style: 'CONVERSATIONAL'
   });
 
   const recognitionRef = useRef<any>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   // Constants
   const FREE_LIMIT = 120; // 2 minutes
@@ -238,6 +278,10 @@ export default function Home() {
     try {
       const content = await processTranscript(text, config);
       setResult(content);
+      // Auto-scroll to result
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 500);
     } catch (e) {
       console.error(e);
     } finally {
@@ -342,7 +386,7 @@ export default function Home() {
             {!result && !isRecording && !isProcessing && (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 border border-dashed border-ink-border rounded-sm opacity-50">
                 <p className="text-sm text-paper-muted mb-2 font-sans">Ready to capture.</p>
-                <p className="text-[10px] uppercase tracking-widest text-paper-muted/60">Select format below</p>
+                <p className="text-[10px] uppercase tracking-widest text-paper-muted/60">Defaults: Summary / Conversational</p>
               </div>
             )}
 
@@ -360,7 +404,7 @@ export default function Home() {
 
             {/* Final Result */}
             {result && (
-              <div className="w-full bg-ink-surface border border-ink-border rounded-sm p-8 shadow-2xl relative group animate-in zoom-in-95 duration-300">
+              <div ref={resultRef} className="w-full bg-ink-surface border border-ink-border rounded-sm p-8 shadow-2xl relative group animate-in zoom-in-95 duration-300">
                 {/* Result Header */}
                 <div className="absolute top-0 left-0 right-0 h-10 border-b border-ink-border bg-ink-base/50 flex items-center justify-between px-4">
                   <div className="flex gap-1.5">
@@ -368,14 +412,37 @@ export default function Home() {
                     <div className="w-2 h-2 rounded-full bg-paper-muted/20" />
                     <div className="w-2 h-2 rounded-full bg-paper-muted/20" />
                   </div>
-                  <button onClick={() => navigator.clipboard.writeText(result)} className="text-[9px] uppercase tracking-widest font-bold text-oxide-red hover:text-white transition-colors">
-                    Copy to Clipboard
-                  </button>
+                  <CopyButton text={result} />
                 </div>
 
                 {/* Result Content */}
-                <div className="mt-6 prose prose-invert prose-p:text-paper-text prose-headings:font-normal prose-sm max-w-none font-serif leading-relaxed">
+                <div className="mt-8 mb-4 prose prose-invert prose-p:text-paper-text prose-headings:font-normal prose-sm max-w-none font-serif leading-relaxed">
                   <p className="whitespace-pre-wrap">{result}</p>
+                </div>
+
+                {/* Result Footer: Integrations & Upgrade */}
+                <div className="border-t border-ink-border pt-4 mt-6">
+                  {!isPro && (
+                    <button onClick={() => { setUpsellMode('UPGRADE'); setShowUpsell(true); }} className="w-full flex items-center justify-between bg-ink-base p-3 rounded-sm border border-ink-border hover:border-oxide-red transition-colors group/banner mb-4">
+                      <span className="text-[10px] uppercase font-bold text-paper-muted group-hover/banner:text-oxide-red">Unlock Full History & Integrations</span>
+                      <span className="text-[10px] uppercase font-bold text-oxide-red flex items-center gap-1">Upgrade <StarIcon className="w-3 h-3" /></span>
+                    </button>
+                  )}
+
+                  <div className="flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity">
+                    <span className="text-[9px] uppercase tracking-widest font-bold text-paper-muted self-center">Send to:</span>
+                    <div className="flex gap-3">
+                      <button onClick={() => setShowUpsell(true)} className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold text-paper-muted hover:text-paper-text hover:underline transition-all">
+                        <QueueListIcon className="w-3 h-3" /> Notion
+                      </button>
+                      <button onClick={() => setShowUpsell(true)} className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold text-paper-muted hover:text-paper-text hover:underline transition-all">
+                        <ShareIcon className="w-3 h-3" /> LinkedIn
+                      </button>
+                      <button onClick={() => setShowUpsell(true)} className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold text-paper-muted hover:text-paper-text hover:underline transition-all">
+                        <GlobeAltIcon className="w-3 h-3" /> WordPress
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -402,32 +469,17 @@ export default function Home() {
             )}
           </div>
 
-          {/* 4. Integrations Strip */}
-          <div className="w-full py-4 border-t border-ink-border flex justify-center mt-2">
-            <div className="flex gap-4 md:gap-6 opacity-60 hover:opacity-100 transition-opacity">
-              <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold text-paper-muted">
-                <QueueListIcon className="w-3 h-3" /> Notion
-              </div>
-              <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold text-paper-muted">
-                <ShareIcon className="w-3 h-3" /> LinkedIn
-              </div>
-              <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold text-paper-muted">
-                <GlobeAltIcon className="w-3 h-3" /> WordPress
-              </div>
-            </div>
-          </div>
-
         </div>
 
-        {/* 5. Configuration Deck */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl border-t border-ink-border pt-8">
+        {/* 5. Configuration Deck (Visible) */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl border-t border-ink-border pt-8 pb-12">
           {/* Format Selection */}
           <div className="space-y-3">
             <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-paper-muted flex items-center gap-2">
               <span className="w-1 h-1 bg-oxide-red rounded-full"></span> Output Format
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {['DESIGN_FEEDBACK', 'EMAIL_DRAFT', 'MEETING_NOTES', 'LINKEDIN_POST'].map((t) => (
+              {['SUMMARY', 'DESIGN_FEEDBACK', 'MEETING_NOTES', 'EMAIL_DRAFT'].map((t) => (
                 <button
                   key={t}
                   onClick={() => setConfig({ ...config, docType: t as DocType })}
@@ -448,7 +500,7 @@ export default function Home() {
               <span className="w-1 h-1 bg-oxide-red rounded-full"></span> Writing Style
             </label>
             <div className="grid grid-cols-1 gap-2">
-              {['PROFESSIONAL', 'DIRECT', 'CREATIVE'].map((s) => (
+              {['CONVERSATIONAL', 'PROFESSIONAL', 'DIRECT', 'CREATIVE'].map((s) => (
                 <button
                   key={s}
                   onClick={() => setConfig({ ...config, style: s as WritingStyle })}
