@@ -1,0 +1,7 @@
+{
+  "name": "Vocalize - Voice to Value",
+  "description": "A stream-of-consciousness converter that transforms voice ramblings into structured, professional documents like design reviews, meeting notes, and itineraries.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
