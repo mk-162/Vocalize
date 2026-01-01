@@ -1,20 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink-base: #0a0a0a;
-  /* Deepest Black/Ink */
-  --color-ink-surface: #171717;
-  /* Charcoal Surface */
-  --color-ink-border: #262626;
-  /* Subtle Border */
-  --color-paper-text: #e5e5e5;
-  /* Warm Off-White */
-  --color-paper-muted: #a3a3a3;
-  /* Muted Text */
-  --color-oxide-red: #c2410c;
-  /* Burnt Orange/Red Accent */
-  --color-industrial-brass: #b45309;
-  /* Muted Brass Accent */
+  --color-ink-base: #0f172a;
+  /* Deep Slate/Navy (from image) */
+  --color-ink-surface: #1e293b;
+  /* Lighter Slate Surface */
+  --color-ink-border: #334155;
+  /* Slate Border */
+  --color-paper-text: #f1f5f9;
+  /* White/Slate-100 */
+  --color-paper-muted: #94a3b8;
+  /* Muted Slate */
+  --color-oxide-red: #ea580c;
+  /* Burnt Orange/Copper Accent */
 
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui;
   --font-serif: var(--font-plex-serif), ui-serif, Georgia;
@@ -25,6 +23,9 @@
     @apply bg-ink-base text-paper-text;
     font-feature-settings: "ss01", "ss02";
     /* Technical alternate glyphs */
+    background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 60%);
+    /* Subtle top light */
+    background-attachment: fixed;
   }
 
   /* Editorial Selection Style */
@@ -32,7 +33,7 @@
     @apply bg-oxide-red/30 text-white;
   }
 
-  /* Custom Scrollbar - Minimal/Mechanical */
+  /* Custom Scrollbar */
   ::-webkit-scrollbar {
     width: 4px;
   }
@@ -42,7 +43,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-ink-border hover:bg-paper-muted transition-colors duration-200;
+    @apply bg-ink-border hover:bg-paper-muted transition-colors duration-200 rounded-full;
   }
 }
 
@@ -51,23 +52,16 @@
   /* Mechanical/Instant Transitions */
   .transition-mechanical {
     transition-property: all;
-    transition-timing-function: cubic-bezier(0, 0, 0, 1);
-    /* Instant snap */
-    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
   }
 
-  /* Physical Button Press Effect */
-  .press-effect:active {
-    transform: translateY(1px);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  /* The "Reference Image" Button Style */
+  .btn-instrument {
+    @apply border border-ink-border bg-transparent text-paper-muted uppercase tracking-widest text-[10px] font-bold font-sans hover:border-paper-muted hover:text-paper-text transition-all duration-200 active:translate-y-px;
   }
 
-  /* Analog Meter Ticks */
-  .meter-tick {
-    @apply w-[2px] bg-ink-border transition-mechanical h-2;
-  }
-
-  .meter-tick.active {
-    @apply bg-oxide-red h-full;
+  .btn-instrument-active {
+    @apply border-oxide-red text-oxide-red bg-oxide-red/5 shadow-[0_0_15px_#ea580c1a];
   }
 }

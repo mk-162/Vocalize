@@ -18,7 +18,8 @@ import {
   ClipboardDocumentCheckIcon,
   QueueListIcon,
   ShareIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  MicrophoneIcon
 } from '@heroicons/react/24/solid';
 
 // --- Components ---
@@ -244,103 +245,133 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-12 px-6 font-serif bg-ink-base selection:bg-oxide-red selection:text-white">
+    <div className="min-h-screen flex flex-col font-serif bg-ink-base selection:bg-oxide-red selection:text-white">
 
-      {/* Header */}
-      <header className="w-full max-w-4xl flex justify-between items-baseline mb-12 border-b border-ink-border pb-6">
-        <h1 className="text-3xl font-normal tracking-tight text-paper-text">Vocalize.</h1>
-        <div className="flex gap-6 text-xs font-sans uppercase tracking-widest text-paper-muted">
-          <span>{user ? user.email : 'Guest Mode'}</span>
-          {user && (
-            <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="hover:text-oxide-red transition-colors">
-              Eject
-            </button>
-          )}
-          {!user && (
-            <button onClick={() => router.push('/login')} className="hover:text-oxide-red transition-colors">
-              Insert Card
-            </button>
-          )}
+      {/* Header: Fixed Top Bar */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-ink-base/80 backdrop-blur-md border-b border-ink-border">
+        <div className="w-full max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          {/* Branding Left */}
+          <div className="flex items-baseline gap-4">
+            <h1 className="text-2xl font-serif text-paper-text tracking-tight cursor-default select-none">Vocalize.</h1>
+            <span className="hidden md:inline text-[10px] font-sans uppercase tracking-[0.2em] text-paper-muted opacity-60">System v2.0</span>
+          </div>
+
+          {/* Auth/Nav Right */}
+          <nav className="flex items-center gap-6 text-[10px] font-sans font-bold uppercase tracking-[0.15em]">
+            {!isPro && (
+              <button onClick={() => setShowUpsell(true)} className="text-oxide-red hover:text-white transition-colors flex items-center gap-1">
+                <StarIcon className="w-3 h-3" /> Upgrade
+              </button>
+            )}
+
+            {user ? (
+              <div className="flex items-center gap-4">
+                <span className="text-paper-muted hidden sm:inline">{user.email}</span>
+                <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="text-paper-muted hover:text-paper-text transition-colors">
+                  Log Out
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => router.push('/login')} className="bg-paper-text text-ink-base px-4 py-1.5 rounded-sm hover:bg-white transition-colors">
+                Log In
+              </button>
+            )}
+          </nav>
         </div>
       </header>
 
-      {/* Main Panel */}
-      <main className="w-full max-w-2xl flex flex-col gap-16">
+      {/* Main Content Area */}
+      <main className="flex-1 w-full max-w-3xl mx-auto pt-32 pb-20 px-6 flex flex-col items-center gap-12">
+
+        {/* Hero Copy (Minimal) */}
+        <div className="text-center space-y-2 mb-4">
+          <p className="text-3xl text-paper-text font-light italic">
+            Stop typing. Just talk.
+          </p>
+        </div>
 
         {/* 1. Record Controls (Central) */}
-        <div className="flex flex-col items-center justify-center gap-8">
+        <div className="flex flex-col items-center justify-center gap-8 w-full">
 
           {/* The Physical Switch */}
           <div className="relative group">
-            {/* Glow / Shadow */}
-            <div className={`absolute -inset-8 rounded-full blur-3xl opacity-20 transition-all duration-500 ${isRecording ? 'bg-oxide-red scale-110' : 'bg-transparent'}`} />
+            {/* Ambient Light */}
+            <div className={`absolute -inset-8 rounded-full blur-3xl opacity-10 transition-all duration-700 ${isRecording ? 'bg-oxide-red scale-125' : 'bg-transparent'}`} />
 
             <button
               onClick={toggleRecording}
               disabled={isProcessing}
               className={`
-                  relative w-36 h-36 rounded-full border-[6px] transition-all duration-200 ease-out shadow-2xl
-                  flex items-center justify-center active:scale-95
+                  relative w-24 h-24 rounded-full border border-ink-border transition-all duration-200 ease-out 
+                  flex items-center justify-center active:scale-95 z-10 shadow-xl
                   ${isRecording
-                  ? 'bg-ink-surface border-oxide-red shadow-[0_0_40px_rgba(194,65,12,0.4)]'
-                  : 'bg-ink-surface border-ink-border hover:border-paper-muted hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]'}
+                  ? 'bg-ink-surface border-oxide-red shadow-[0_0_50px_rgba(234,88,12,0.15)]'
+                  : 'bg-ink-surface hover:bg-ink-surface/80 hover:border-paper-muted'}
                 `}
             >
-              <div className={`w-24 h-24 rounded-full transition-all duration-300 flex items-center justify-center ${isRecording ? 'bg-oxide-red' : 'bg-ink-border group-hover:bg-paper-muted/20'
-                }`}>
+              {/* Icon Layer */}
+              <div className={`transition-all duration-300 ${isRecording ? 'text-oxide-red scale-110' : 'text-paper-muted group-hover:text-paper-text'}`}>
                 {isRecording ? (
-                  <div className="w-8 h-8 bg-white rounded-sm drop-shadow-md" /> // Stop Square
+                  <div className="w-6 h-6 bg-oxide-red rounded-sm shadow-[0_0_15px_rgba(234,88,12,0.5)]" />
                 ) : (
-                  // Play Triangle - Oxide Orange
-                  <div className="w-0 h-0 border-t-[14px] border-t-transparent border-l-[24px] border-l-oxide-red border-b-[14px] border-b-transparent ml-2 drop-shadow-sm" />
+                  <MicrophoneIcon className="w-8 h-8" />
                 )}
               </div>
             </button>
           </div>
 
-          {/* Timer & Meter */}
-          <div className="w-full max-w-[200px] space-y-3">
-            <div className="flex justify-between text-[11px] uppercase tracking-widest font-mono text-paper-muted font-medium">
+          {/* Status & Timer */}
+          <div className="w-full max-w-[200px] flex flex-col items-center gap-2">
+            <div className="w-full flex justify-between text-[10px] uppercase tracking-[0.2em] font-sans font-bold text-paper-muted">
               <span className={isRecording ? 'text-oxide-red animate-pulse' : ''}>
-                {isRecording ? '● ON AIR' : 'STANDBY'}
+                {isRecording ? '● Live Input' : 'Ready'}
               </span>
-              <span>{Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}</span>
+              <span className="font-mono">{Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}</span>
             </div>
 
-            {/* Mechanical Timer Bar */}
-            <div className="h-3 w-full bg-ink-surface border border-ink-border rounded-sm relative overflow-hidden">
+            {/* Mechanical Progress Bar */}
+            <div className="h-1 w-full bg-ink-surface border border-ink-border rounded-full relative overflow-hidden">
               <div
-                className="h-full bg-oxide-red transition-all duration-1000 ease-linear opacity-80"
+                className="h-full bg-oxide-red transition-all duration-1000 ease-linear"
                 style={{ width: `${Math.min((recordingSeconds / currentLimit) * 100, 100)}%` }}
               />
-              {/* Ticks */}
-              <div className="absolute inset-0 flex justify-between px-px opacity-30">
-                {[...Array(20)].map((_, i) => (
-                  <div key={i} className="w-px h-full bg-ink-base" />
-                ))}
-              </div>
             </div>
           </div>
         </div>
 
-        {/* 2. Control Layout */}
-        <div className="flex flex-col gap-10 border-t border-ink-border pt-10">
+        {/* 2. Integrations (Moved Up) */}
+        <div className="w-full max-w-2xl py-6 border-y border-ink-border/50">
+          <div className="flex flex-wrap justify-center gap-4">
+            <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-paper-muted self-center mr-2">Integrate:</span>
+            <button onClick={() => setShowUpsell(true)} className="text-[10px] font-sans font-bold uppercase tracking-wider text-paper-muted hover:text-oxide-red transition-colors flex items-center gap-1.5">
+              <QueueListIcon className="w-3 h-3" /> Notion
+            </button>
+            <span className="text-ink-border self-center">|</span>
+            <button onClick={() => setShowUpsell(true)} className="text-[10px] font-sans font-bold uppercase tracking-wider text-paper-muted hover:text-oxide-red transition-colors flex items-center gap-1.5">
+              <ShareIcon className="w-3 h-3" /> LinkedIn
+            </button>
+            <span className="text-ink-border self-center">|</span>
+            <button onClick={() => setShowUpsell(true)} className="text-[10px] font-sans font-bold uppercase tracking-wider text-paper-muted hover:text-oxide-red transition-colors flex items-center gap-1.5">
+              <GlobeAltIcon className="w-3 h-3" /> WordPress
+            </button>
+          </div>
+        </div>
 
+        {/* 3. Configuration Deck */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Format Selection */}
-          <div className="space-y-4">
-            <label className="text-[10px] uppercase tracking-widest text-paper-muted flex items-center gap-2">
-              <DocumentDuplicateIcon className="w-3 h-3" /> Output Format
+          <div className="space-y-3">
+            <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-paper-muted flex items-center gap-2">
+              <span className="w-1 h-1 bg-oxide-red rounded-full"></span> Output Format
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {['DESIGN_FEEDBACK', 'EMAIL_DRAFT', 'MEETING_NOTES', 'LINKEDIN_POST'].map((t) => (
                 <button
                   key={t}
                   onClick={() => setConfig({ ...config, docType: t as DocType })}
                   className={`
-                    h-12 px-2 text-xs font-sans font-bold tracking-wider uppercase border rounded-sm transition-all duration-100 active:translate-y-px
-                    ${config.docType === t
-                      ? 'bg-paper-text text-ink-base border-paper-text shadow-sm'
-                      : 'bg-ink-surface border-ink-border text-paper-muted hover:border-paper-muted hover:text-paper-text'}
+                    h-9 w-full btn-instrument flex items-center justify-center text-[9px]
+                    ${config.docType === t ? 'btn-instrument-active' : ''}
                   `}
                 >
                   {t.replace('_', ' ')}
@@ -350,20 +381,18 @@ export default function Home() {
           </div>
 
           {/* Style Selection */}
-          <div className="space-y-4">
-            <label className="text-[10px] uppercase tracking-widest text-paper-muted flex items-center gap-2">
-              <SparklesIcon className="w-3 h-3" /> Tone
+          <div className="space-y-3">
+            <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-paper-muted flex items-center gap-2">
+              <span className="w-1 h-1 bg-oxide-red rounded-full"></span> Writing Style
             </label>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-1 gap-2">
               {['PROFESSIONAL', 'DIRECT', 'CREATIVE'].map((s) => (
                 <button
                   key={s}
                   onClick={() => setConfig({ ...config, style: s as WritingStyle })}
                   className={`
-                    flex-1 h-12 text-xs font-sans font-bold tracking-wider uppercase border rounded-sm transition-all duration-100 active:translate-y-px
-                    ${config.style === s
-                      ? 'bg-paper-text text-ink-base border-paper-text shadow-sm'
-                      : 'bg-ink-surface border-ink-border text-paper-muted hover:border-paper-muted hover:text-paper-text'}
+                    h-9 w-full btn-instrument flex items-center justify-center text-[9px]
+                    ${config.style === s ? 'btn-instrument-active' : ''}
                   `}
                 >
                   {s}
@@ -373,23 +402,23 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 3. Output - The Paper */}
+        {/* 4. Output Display */}
         {(result || isRecording || isProcessing) && (
-          <div ref={resultRef} className="animate-in fade-in duration-700 slide-in-from-bottom-8">
-            <div className="flex justify-between items-center mb-4 border-b border-ink-border pb-2">
-              <span className="text-[10px] uppercase tracking-widest text-paper-muted">Transcript Ref #001</span>
+          <div ref={resultRef} className="w-full animate-in fade-in duration-700 slide-in-from-bottom-8 border-t border-ink-border pt-12">
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-[10px] uppercase tracking-widest text-paper-muted font-bold">Generated Output</span>
               {result && (
-                <button onClick={copyToClipboard} className="text-[10px] uppercase tracking-widest text-oxide-red hover:text-white transition-colors flex items-center gap-1">
-                  <ClipboardDocumentCheckIcon className="w-3 h-3" /> Copy
+                <button onClick={copyToClipboard} className="text-[10px] uppercase tracking-widest text-oxide-red hover:text-white transition-colors flex items-center gap-1 font-bold">
+                  [ Copy ]
                 </button>
               )}
             </div>
 
-            <div className="min-h-[200px] pl-4 border-l border-ink-border relative">
+            <div className="bg-ink-surface/30 p-8 rounded-sm border border-ink-border relative">
               {(isRecording || isProcessing) && !result && (
                 <div className="space-y-4 opacity-70">
                   <div className="flex items-center gap-3 text-oxide-red font-mono text-xs uppercase tracking-widest">
-                    {isProcessing ? '• GENERATING...' : '• LISTENING...'}
+                    {isProcessing ? '/// PROCESSING DATA...' : '/// RECORDING AUDIO...'}
                     <MechanicalMeter isActive={isRecording} volume={volume} />
                   </div>
                   <p className="text-lg text-paper-text leading-relaxed font-serif">
@@ -406,24 +435,22 @@ export default function Home() {
                 </div>
               )}
             </div>
-
-            {result && (
-              <div className="mt-8 pt-6 border-t border-ink-border flex gap-4 overflow-x-auto pb-2">
-                <button onClick={() => setShowUpsell(true)} className="flex-shrink-0 px-4 py-2 bg-ink-surface border border-ink-border text-xs font-sans uppercase tracking-wider text-paper-muted hover:text-white hover:border-paper-muted transition-colors flex items-center gap-2">
-                  <QueueListIcon className="w-3 h-3" /> Save to Notion
-                </button>
-                <button onClick={() => setShowUpsell(true)} className="flex-shrink-0 px-4 py-2 bg-ink-surface border border-ink-border text-xs font-sans uppercase tracking-wider text-paper-muted hover:text-white hover:border-paper-muted transition-colors flex items-center gap-2">
-                  <ShareIcon className="w-3 h-3" /> LinkedIn
-                </button>
-                <button onClick={() => setShowUpsell(true)} className="flex-shrink-0 px-4 py-2 bg-ink-surface border border-ink-border text-xs font-sans uppercase tracking-wider text-paper-muted hover:text-white hover:border-paper-muted transition-colors flex items-center gap-2">
-                  <GlobeAltIcon className="w-3 h-3" /> Blog
-                </button>
-              </div>
-            )}
           </div>
         )}
 
       </main>
+
+      {/* Footer */}
+      <footer className="w-full border-t border-ink-border mt-auto bg-ink-base">
+        <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-widest text-paper-muted">
+          <div className="flex gap-6">
+            <a href="#" className="hover:text-paper-text transition-colors">Privacy</a>
+            <a href="#" className="hover:text-paper-text transition-colors">Terms</a>
+            <a href="#" className="hover:text-paper-text transition-colors">About</a>
+          </div>
+          <p className="opacity-50">© 2024 Vocalize Systems Inc.</p>
+        </div>
+      </footer>
 
       <UpsellModal
         isOpen={showUpsell}
