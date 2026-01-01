@@ -6,145 +6,33 @@ import { processTranscript } from './actions/gemini';
 import { DocType, DocLength, WritingStyle, ProcessingConfig } from '@/types';
 import { createClient } from '@/lib/supabase/client';
 import {
-  MicrophoneIcon,
-  StopIcon,
-  ArrowPathIcon,
-  ClipboardDocumentCheckIcon,
-  DocumentTextIcon,
   SparklesIcon,
+  DocumentDuplicateIcon,
+  CheckCircleIcon,
+  LockClosedIcon,
+  StarIcon,
+  ArrowPathIcon,
+  XMarkIcon,
   PencilSquareIcon,
   ArrowDownTrayIcon,
-  XMarkIcon,
+  ClipboardDocumentCheckIcon,
   QueueListIcon,
-  LockClosedIcon,
-  CheckCircleIcon,
-  StarIcon,
-  GlobeAltIcon,
-  ShareIcon
+  ShareIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/solid';
 
 // --- Components ---
 
-const Waveform = ({ isActive }: { isActive: boolean }) => {
+const MechanicalMeter = ({ isActive, volume }: { isActive: boolean; volume: number }) => {
   return (
-    <div className={`flex items-center justify-center gap-1 h-12 ${isActive ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
-      {[...Array(8)].map((_, i) => (
+    <div className="flex gap-0.5 h-6 items-end opacity-80">
+      {[...Array(12)].map((_, i) => (
         <div
           key={i}
-          className="w-2 bg-red-400 rounded-full animate-wave"
-          style={{
-            height: '100%',
-            animation: isActive ? `wave 1s ease-in-out infinite` : 'none',
-            animationDelay: `${i * 0.1}s`
-          }}
+          className={`w-1 transition-mechanical ${isActive && i < volume ? 'bg-oxide-red h-full' : 'bg-ink-border h-1'
+            }`}
         />
       ))}
-    </div>
-  );
-};
-
-const MarkdownRenderer = ({ content }: { content: string }) => {
-  const lines = content.split('\n');
-  return (
-    <div className="space-y-4">
-      {lines.map((line, i) => {
-        const trimmed = line.trim();
-
-        // Headers
-        if (line.startsWith('### ')) return <h3 key={i} className="text-lg font-bold text-cyan-100 mt-4">{formatInline(line.replace('### ', ''))}</h3>;
-        if (line.startsWith('## ')) return <h2 key={i} className="text-xl font-bold text-white mt-6 border-b border-slate-700 pb-2">{formatInline(line.replace('## ', ''))}</h2>;
-        if (line.startsWith('# ')) return <h1 key={i} className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-6">{formatInline(line.replace('# ', ''))}</h1>;
-
-        // List items
-        if (trimmed.startsWith('- ') || (trimmed.startsWith('* ') && !trimmed.startsWith('**'))) {
-          const content = trimmed.substring(2);
-          return (
-            <div key={i} className="flex gap-3 ml-2">
-              <span className="text-cyan-500 mt-1.5">•</span>
-              <p className="text-slate-300 leading-relaxed flex-1">{formatInline(content)}</p>
-            </div>
-          )
-        }
-
-        // Numbered lists
-        if (/^\d+\.\s/.test(trimmed)) {
-          return (
-            <div key={i} className="flex gap-3 ml-2">
-              <span className="text-cyan-500 font-mono text-sm mt-1">{trimmed.split('.')[0]}.</span>
-              <p className="text-slate-300 leading-relaxed flex-1">{formatInline(trimmed.replace(/^\d+\.\s/, ''))}</p>
-            </div>
-          )
-        }
-
-        if (!trimmed) return <div key={i} className="h-2"></div>;
-
-        return <p key={i} className="text-slate-300 leading-relaxed">{formatInline(line)}</p>;
-      })}
-    </div>
-  );
-};
-
-const formatInline = (text: string) => {
-  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index} className="text-cyan-200 font-semibold">{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith('*') && part.endsWith('*')) {
-      return <em key={index} className="text-slate-400 italic">{part.slice(1, -1)}</em>;
-    }
-    return part;
-  });
-};
-
-const ProgressBar = ({ current, max, isPro, onUpgrade }: { current: number; max: number; isPro: boolean; onUpgrade?: () => void }) => {
-  const percentage = Math.min((current / max) * 100, 100);
-  return (
-    <div className="w-full max-w-[50vw] mx-auto animate-in fade-in duration-500 pointer-events-auto">
-      <div className="flex justify-between items-end mb-2">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Live Recording</span>
-          <span className="text-4xl font-mono font-bold text-cyan-400 group-hover:text-cyan-300 transition-colors leading-none">
-            {Math.floor(current / 60)}:{String(current % 60).padStart(2, '0')}
-          </span>
-        </div>
-
-        <div className="flex flex-col items-end">
-          {!isPro && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onUpgrade?.();
-              }}
-              className="mb-2 px-4 py-1.5 bg-purple-600 border border-purple-500 hover:bg-purple-500 text-white text-[11px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center gap-2 shadow-lg shadow-purple-900/40 hover:-translate-y-0.5"
-            >
-              <StarIcon className="w-3.5 h-3.5 text-yellow-300" />
-              Upgrade to Pro
-            </button>
-          )}
-          <div className="flex items-baseline gap-1.5 opacity-80">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Time Limit:</span>
-            <span className="text-2xl font-mono font-bold text-slate-400">
-              {Math.floor(max / 60)}:00
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="h-4 w-full bg-slate-800/80 rounded-full overflow-hidden border border-slate-700/50 p-[3px] relative shadow-2xl">
-        <div
-          className={`h-full rounded-full transition-all duration-1000 ease-linear ${isPro ? 'bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 bg-[length:200%_100%] animate-gradient shadow-[0_0_20px_rgba(168,85,247,0.6)]' : 'bg-gradient-to-r from-cyan-600 via-blue-500 to-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)]'
-            }`}
-          style={{ width: `${percentage}%` }}
-        />
-        {/* Pulse effect on bar end */}
-        {percentage > 0 && percentage < 100 && (
-          <div
-            className="absolute top-0 bottom-0 w-1 bg-white blur-[2px] opacity-40 animate-pulse"
-            style={{ left: `calc(${percentage}% - 2px)` }}
-          />
-        )}
-      </div>
     </div>
   );
 };
@@ -155,66 +43,51 @@ const UpsellModal = ({ isOpen, onClose, onUpgrade }: { isOpen: boolean; onClose:
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-ink-base/90 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      <div className="relative bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-
-        {/* Modal Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-center">
-          <div className="mx-auto w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mb-4 backdrop-blur-sm">
-            <LockClosedIcon className="w-6 h-6 text-white" />
+      <div className="relative bg-ink-surface border border-ink-border rounded-sm max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 font-sans">
+        {/* Header */}
+        <div className="bg-ink-base p-6 text-center border-b border-ink-border">
+          <div className="mx-auto w-10 h-10 border border-ink-border rounded-full flex items-center justify-center mb-4 text-paper-muted">
+            <LockClosedIcon className="w-5 h-5" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-1">Go Viral. Save Time.</h2>
-          <p className="text-blue-100 text-sm">Automate your personal brand & workflow.</p>
+          <h2 className="text-xl font-medium text-paper-text tracking-tight mb-1">Upgrade to Pro</h2>
+          <p className="text-paper-muted text-xs uppercase tracking-widest">Unlocking Advanced Tools</p>
         </div>
 
         {/* Features */}
         <div className="p-8 space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="mt-1 p-1 bg-green-500/20 rounded-full">
-                <CheckCircleIcon className="w-4 h-4 text-green-400" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-200">30-Minute Recording</h4>
-                <p className="text-xs text-slate-400">Rumble for longer. Perfect for long meetings or brainstorms.</p>
-              </div>
+          <div className="flex items-start gap-3">
+            <CheckCircleIcon className="w-5 h-5 text-oxide-red mt-0.5" />
+            <div>
+              <h4 className="font-medium text-paper-text text-sm">30-Minute Recording</h4>
+              <p className="text-xs text-paper-muted leading-relaxed">Extended recording time for deep focus sessions.</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="mt-1 p-1 bg-green-500/20 rounded-full">
-              <CheckCircleIcon className="w-4 h-4 text-green-400" />
-            </div>
+            <CheckCircleIcon className="w-5 h-5 text-oxide-red mt-0.5" />
             <div>
-              <h4 className="font-semibold text-slate-200">Auto-Sync Writing</h4>
-              <p className="text-xs text-slate-400">Post directly to LinkedIn, X, and Notion with one click.</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="mt-1 p-1 bg-green-500/20 rounded-full">
-              <CheckCircleIcon className="w-4 h-4 text-green-400" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-slate-200">Premium AI Models</h4>
-              <p className="text-xs text-slate-400">Higher quality drafts with more detail and nuance.</p>
+              <h4 className="font-medium text-paper-text text-sm">Cloud History</h4>
+              <p className="text-xs text-paper-muted leading-relaxed">Save and sync your sessions across devices.</p>
             </div>
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-700/50">
+        {/* Footer */}
+        <div className="p-4 bg-ink-base border-t border-ink-border flex flex-col gap-3">
           <button
             onClick={onUpgrade}
-            className="w-full bg-white text-slate-900 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors mb-3 flex items-center justify-center gap-2"
+            className="w-full bg-oxide-red hover:bg-orange-700 text-white font-medium py-3 rounded-sm transition-colors flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
           >
-            <StarIcon className="w-5 h-5 text-yellow-600" />
-            Upgrade to Pro - $9/mo
+            <StarIcon className="w-4 h-4" />
+            Upgrade - $9/mo
           </button>
           <button
             onClick={onClose}
-            className="w-full text-slate-500 text-sm hover:text-slate-300 transition-colors"
+            className="w-full text-paper-muted text-xs hover:text-paper-text transition-colors uppercase tracking-widest"
           >
-            No thanks, I'll copy-paste manually
+            Dismiss
           </button>
         </div>
       </div>
@@ -229,55 +102,20 @@ export default function Home() {
   const supabase = createClient();
   const [user, setUser] = useState<any>(null);
 
-  // Application State
+  // App State
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [finalTranscript, setFinalTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [volume, setVolume] = useState(0);
 
   // UI & Tier State
   const [isPro, setIsPro] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const [isEditingTranscript, setIsEditingTranscript] = useState(false);
-  const [editableTranscript, setEditableTranscript] = useState('');
   const [showUpsell, setShowUpsell] = useState(false);
 
-  // Check Auth & Sync Profile
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        // Fetch Profile
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_pro')
-          .eq('id', user.id)
-          .single();
-
-        if (data) {
-          setIsPro(data.is_pro);
-        } else if (error && error.code === 'PGRST116') {
-          // Create Profile if missing
-          await supabase.from('profiles').insert({
-            id: user.id,
-            email: user.email,
-            is_pro: false
-          });
-        }
-      }
-    };
-    checkUser();
-  }, [supabase]);
-
-  // Constants
-  const FREE_LIMIT = 120; // 2 minutes
-  const PRO_LIMIT = 1800; // 30 minutes
-  const currentLimit = isPro ? PRO_LIMIT : FREE_LIMIT;
-
-  // Configuration State
+  // Configuration (Switches)
   const [config, setConfig] = useState<ProcessingConfig>({
     docType: 'DESIGN_FEEDBACK',
     length: 'DETAILED',
@@ -287,17 +125,47 @@ export default function Home() {
   const recognitionRef = useRef<any>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
-  // Timer & Loop Handling
-  const stopRequestedRef = useRef(false);
+  // Constants
+  const FREE_LIMIT = 120;
+  const PRO_LIMIT = 1800;
+  const currentLimit = isPro ? PRO_LIMIT : FREE_LIMIT;
 
-  // Recording Timer
+  // Auth Check
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        // Check profile
+        const { data } = await supabase.from('profiles').select('is_pro').eq('id', user.id).single();
+        if (data) setIsPro(data.is_pro);
+      }
+    };
+    checkUser();
+  }, [supabase]);
+
+  // Volume Simulation
+  useEffect(() => {
+    let interval: any;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setVolume(Math.floor(Math.random() * 12));
+      }, 100);
+    } else {
+      setVolume(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
+
+  // Timer
   useEffect(() => {
     let interval: any;
     if (isRecording) {
       interval = setInterval(() => {
         setRecordingSeconds(prev => {
           if (prev >= currentLimit) {
-            handleStopRecording(true); // Stop due to limit
+            toggleRecording(); // Stop
+            if (!isPro) setShowUpsell(true);
             return prev;
           }
           return prev + 1;
@@ -307,68 +175,9 @@ export default function Home() {
       setRecordingSeconds(0);
     }
     return () => clearInterval(interval);
-  }, [isRecording, currentLimit]);
+  }, [isRecording, currentLimit, isPro]);
 
-  const handleProcess = useCallback(async (manualText?: string) => {
-    const textToProcess = manualText !== undefined ? manualText : (finalTranscript + ' ' + transcript).trim();
-    if (manualText === undefined) {
-      setEditableTranscript(textToProcess);
-    }
-
-    if (!textToProcess) return;
-
-    setIsProcessing(true);
-    setResult('');
-
-    try {
-      const generatedContent = await processTranscript(textToProcess, config);
-      setResult(generatedContent);
-      setIsEditingTranscript(false);
-
-      setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-
-    } catch (err) {
-      setError("Failed to process. Please check your network or API Key.");
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [finalTranscript, transcript, config]);
-
-  const handleStopRecording = (hitLimit = false) => {
-    stopRequestedRef.current = true;
-    recognitionRef.current?.stop();
-    setIsRecording(false);
-
-    if (hitLimit && !isPro) {
-      setShowUpsell(true);
-    } else {
-      handleProcess();
-    }
-  };
-
-  const toggleRecording = () => {
-    if (isRecording) {
-      handleStopRecording(false);
-    } else {
-      stopRequestedRef.current = false;
-      setError(null);
-      setTranscript('');
-      setFinalTranscript('');
-      setResult('');
-      setIsEditingTranscript(false);
-
-      try {
-        recognitionRef.current?.start();
-        setIsRecording(true);
-      } catch (e) {
-        setError("Could not start microphone. Please refresh.");
-      }
-    }
-  };
-
-  // Initialize Speech Recognition
+  // Speech Recognition Setup
   useEffect(() => {
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
@@ -380,7 +189,6 @@ export default function Home() {
       recognitionRef.current.onresult = (event: any) => {
         let interimTranscript = '';
         let finalChunk = '';
-
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalChunk += event.results[i][0].transcript;
@@ -388,388 +196,240 @@ export default function Home() {
             interimTranscript += event.results[i][0].transcript;
           }
         }
-
-        if (finalChunk) {
-          setFinalTranscript(prev => prev + ' ' + finalChunk);
-        }
+        if (finalChunk) setFinalTranscript(prev => prev + ' ' + finalChunk);
         setTranscript(interimTranscript);
       };
-
-      recognitionRef.current.onend = () => {
-        if (!stopRequestedRef.current && isRecording && isPro) {
-          try {
-            recognitionRef.current?.start();
-          } catch (e) {
-            console.error("Failed to auto-restart recognition", e);
-          }
-        }
-      };
-
-      recognitionRef.current.onerror = (event: any) => {
-        if (event.error === 'not-allowed') {
-          setError("Microphone access denied. Please allow permissions.");
-          setIsRecording(false);
-        }
-        console.error("Speech Recognition Error:", event.error);
-      };
-    } else {
-      setTimeout(() => {
-        if (!recognitionRef.current) {
-          setError("Your browser does not support Speech Recognition. Please use Chrome or Safari.");
-        }
-      }, 1000);
     }
-  }, [isRecording, isPro]);
+  }, []);
 
-  const handleRegenerate = () => {
-    handleProcess(editableTranscript);
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      handleProcess();
+    } else {
+      setFinalTranscript('');
+      setTranscript('');
+      setResult('');
+      recognitionRef.current?.start();
+      setIsRecording(true);
+    }
+  };
+
+  const handleProcess = async () => {
+    const text = (finalTranscript + ' ' + transcript).trim();
+    if (!text) return;
+    setIsProcessing(true);
+    try {
+      const content = await processTranscript(text, config);
+      setResult(content);
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 200);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleUpgrade = () => {
+    // Placeholder
+    alert("Redirecting to Lemon Squeezy Checkout...");
+    setShowUpsell(false);
   };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(result);
-    const btn = document.getElementById('copy-btn');
-    if (btn) {
-      const originalText = btn.innerText;
-      btn.innerText = "Copied!";
-      setTimeout(() => btn.innerText = originalText, 2000);
-    }
-  };
-
-  const downloadResult = () => {
-    const blob = new Blob([result], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `vocalize-${config.docType.toLowerCase().replace(/\s/g, '-')}-${new Date().toISOString().slice(0, 10)}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleUpgrade = () => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    // TODO: Integrate Lemon Squeezy here
-    setIsPro(true);
-    setShowUpsell(false);
-    // Success feedback
-    const toast = document.createElement('div');
-    toast.className = "fixed top-8 left-1/2 -translate-x-1/2 bg-purple-600 text-white px-6 py-3 rounded-full font-bold shadow-2xl z-[200] animate-in slide-in-from-top-4";
-    toast.innerText = "🚀 Pro Features Unlocked: 30-Minute Rambling Active!";
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center py-12 px-4 md:px-8 selection:bg-cyan-500/30 selection:text-cyan-100 font-sans">
+    <div className="min-h-screen flex flex-col items-center py-12 px-6 font-serif bg-ink-base selection:bg-oxide-red selection:text-white">
 
-      {/* Top Bar */}
-      <div className="absolute top-6 right-6 z-50 flex items-center gap-4">
-        {user ? (
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-500 font-medium hidden md:block">{user.email}</span>
+      {/* Header */}
+      <header className="w-full max-w-4xl flex justify-between items-baseline mb-12 border-b border-ink-border pb-6">
+        <h1 className="text-3xl font-normal tracking-tight text-paper-text">Vocalize.</h1>
+        <div className="flex gap-6 text-xs font-sans uppercase tracking-widest text-paper-muted">
+          <span>{user ? user.email : 'Guest Mode'}</span>
+          {user && (
+            <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} className="hover:text-oxide-red transition-colors">
+              Eject
+            </button>
+          )}
+          {!user && (
+            <button onClick={() => router.push('/login')} className="hover:text-oxide-red transition-colors">
+              Insert Card
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Main Panel */}
+      <main className="w-full max-w-2xl flex flex-col gap-16">
+
+        {/* 1. Record Controls (Central) */}
+        <div className="flex flex-col items-center justify-center gap-8">
+
+          {/* The Physical Switch */}
+          <div className="relative group">
+            {/* Glow / Shadow */}
+            <div className={`absolute -inset-8 rounded-full blur-3xl opacity-20 transition-all duration-500 ${isRecording ? 'bg-oxide-red scale-110' : 'bg-transparent'}`} />
+
             <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                setUser(null);
-                setIsPro(false);
-              }}
-              className="px-3 py-1.5 bg-slate-800 border border-slate-700 text-slate-400 text-xs font-bold rounded-lg hover:bg-slate-700 hover:text-white transition-colors"
+              onClick={toggleRecording}
+              disabled={isProcessing}
+              className={`
+                  relative w-36 h-36 rounded-full border-[6px] transition-all duration-200 ease-out shadow-2xl
+                  flex items-center justify-center active:scale-95
+                  ${isRecording
+                  ? 'bg-ink-surface border-oxide-red shadow-[0_0_40px_rgba(194,65,12,0.4)]'
+                  : 'bg-ink-surface border-ink-border hover:border-paper-muted hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]'}
+                `}
             >
-              Sign Out
+              <div className={`w-24 h-24 rounded-full transition-all duration-300 flex items-center justify-center ${isRecording ? 'bg-oxide-red' : 'bg-ink-border group-hover:bg-paper-muted/20'
+                }`}>
+                {isRecording ? (
+                  <div className="w-8 h-8 bg-white rounded-sm drop-shadow-md" /> // Stop Square
+                ) : (
+                  // Play Triangle - Oxide Orange
+                  <div className="w-0 h-0 border-t-[14px] border-t-transparent border-l-[24px] border-l-oxide-red border-b-[14px] border-b-transparent ml-2 drop-shadow-sm" />
+                )}
+              </div>
             </button>
           </div>
-        ) : (
-          <button
-            onClick={() => router.push('/login')}
-            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-full transition-colors shadow-lg shadow-cyan-900/20"
-          >
-            Sign In
-          </button>
+
+          {/* Timer & Meter */}
+          <div className="w-full max-w-[200px] space-y-3">
+            <div className="flex justify-between text-[11px] uppercase tracking-widest font-mono text-paper-muted font-medium">
+              <span className={isRecording ? 'text-oxide-red animate-pulse' : ''}>
+                {isRecording ? '● ON AIR' : 'STANDBY'}
+              </span>
+              <span>{Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}</span>
+            </div>
+
+            {/* Mechanical Timer Bar */}
+            <div className="h-3 w-full bg-ink-surface border border-ink-border rounded-sm relative overflow-hidden">
+              <div
+                className="h-full bg-oxide-red transition-all duration-1000 ease-linear opacity-80"
+                style={{ width: `${Math.min((recordingSeconds / currentLimit) * 100, 100)}%` }}
+              />
+              {/* Ticks */}
+              <div className="absolute inset-0 flex justify-between px-px opacity-30">
+                {[...Array(20)].map((_, i) => (
+                  <div key={i} className="w-px h-full bg-ink-base" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Control Layout */}
+        <div className="flex flex-col gap-10 border-t border-ink-border pt-10">
+
+          {/* Format Selection */}
+          <div className="space-y-4">
+            <label className="text-[10px] uppercase tracking-widest text-paper-muted flex items-center gap-2">
+              <DocumentDuplicateIcon className="w-3 h-3" /> Output Format
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {['DESIGN_FEEDBACK', 'EMAIL_DRAFT', 'MEETING_NOTES', 'LINKEDIN_POST'].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setConfig({ ...config, docType: t as DocType })}
+                  className={`
+                    h-12 px-2 text-xs font-sans font-bold tracking-wider uppercase border rounded-sm transition-all duration-100 active:translate-y-px
+                    ${config.docType === t
+                      ? 'bg-paper-text text-ink-base border-paper-text shadow-sm'
+                      : 'bg-ink-surface border-ink-border text-paper-muted hover:border-paper-muted hover:text-paper-text'}
+                  `}
+                >
+                  {t.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Style Selection */}
+          <div className="space-y-4">
+            <label className="text-[10px] uppercase tracking-widest text-paper-muted flex items-center gap-2">
+              <SparklesIcon className="w-3 h-3" /> Tone
+            </label>
+            <div className="flex gap-3">
+              {['PROFESSIONAL', 'DIRECT', 'CREATIVE'].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setConfig({ ...config, style: s as WritingStyle })}
+                  className={`
+                    flex-1 h-12 text-xs font-sans font-bold tracking-wider uppercase border rounded-sm transition-all duration-100 active:translate-y-px
+                    ${config.style === s
+                      ? 'bg-paper-text text-ink-base border-paper-text shadow-sm'
+                      : 'bg-ink-surface border-ink-border text-paper-muted hover:border-paper-muted hover:text-paper-text'}
+                  `}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Output - The Paper */}
+        {(result || isRecording || isProcessing) && (
+          <div ref={resultRef} className="animate-in fade-in duration-700 slide-in-from-bottom-8">
+            <div className="flex justify-between items-center mb-4 border-b border-ink-border pb-2">
+              <span className="text-[10px] uppercase tracking-widest text-paper-muted">Transcript Ref #001</span>
+              {result && (
+                <button onClick={copyToClipboard} className="text-[10px] uppercase tracking-widest text-oxide-red hover:text-white transition-colors flex items-center gap-1">
+                  <ClipboardDocumentCheckIcon className="w-3 h-3" /> Copy
+                </button>
+              )}
+            </div>
+
+            <div className="min-h-[200px] pl-4 border-l border-ink-border relative">
+              {(isRecording || isProcessing) && !result && (
+                <div className="space-y-4 opacity-70">
+                  <div className="flex items-center gap-3 text-oxide-red font-mono text-xs uppercase tracking-widest">
+                    {isProcessing ? '• GENERATING...' : '• LISTENING...'}
+                    <MechanicalMeter isActive={isRecording} volume={volume} />
+                  </div>
+                  <p className="text-lg text-paper-text leading-relaxed font-serif">
+                    {finalTranscript} <span className="text-paper-muted">{transcript}</span>
+                  </p>
+                </div>
+              )}
+
+              {result && (
+                <div className="prose prose-invert max-w-none">
+                  <p className="whitespace-pre-wrap leading-relaxed font-serif text-lg text-paper-text">
+                    {result}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {result && (
+              <div className="mt-8 pt-6 border-t border-ink-border flex gap-4 overflow-x-auto pb-2">
+                <button onClick={() => setShowUpsell(true)} className="flex-shrink-0 px-4 py-2 bg-ink-surface border border-ink-border text-xs font-sans uppercase tracking-wider text-paper-muted hover:text-white hover:border-paper-muted transition-colors flex items-center gap-2">
+                  <QueueListIcon className="w-3 h-3" /> Save to Notion
+                </button>
+                <button onClick={() => setShowUpsell(true)} className="flex-shrink-0 px-4 py-2 bg-ink-surface border border-ink-border text-xs font-sans uppercase tracking-wider text-paper-muted hover:text-white hover:border-paper-muted transition-colors flex items-center gap-2">
+                  <ShareIcon className="w-3 h-3" /> LinkedIn
+                </button>
+                <button onClick={() => setShowUpsell(true)} className="flex-shrink-0 px-4 py-2 bg-ink-surface border border-ink-border text-xs font-sans uppercase tracking-wider text-paper-muted hover:text-white hover:border-paper-muted transition-colors flex items-center gap-2">
+                  <GlobeAltIcon className="w-3 h-3" /> Blog
+                </button>
+              </div>
+            )}
+          </div>
         )}
-      </div>
+
+      </main>
 
       <UpsellModal
         isOpen={showUpsell}
         onClose={() => setShowUpsell(false)}
         onUpgrade={handleUpgrade}
       />
-
-      {/* Header */}
-      <div className={`w-full max-w-3xl mb-8 text-center transition-all duration-500 ${isRecording ? 'opacity-50 scale-95 blur-[2px]' : 'opacity-100'}`}>
-        <div className="flex justify-center items-center gap-3 mb-4">
-          <h1 className="text-5xl md:text-7xl font-black bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 tracking-tighter">
-            Vocalize
-          </h1>
-          {isPro && (
-            <span className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-[10px] uppercase font-black px-2 py-1 rounded-md shadow-lg shadow-purple-900/40">Pro</span>
-          )}
-        </div>
-        <p className="text-slate-300 text-xl md:text-2xl font-light leading-relaxed max-w-2xl mx-auto">
-          Stop typing. Just talk. <br />
-          <span className="text-slate-500 text-lg">We turn your rambling voice notes into structured <span className="text-cyan-400 font-semibold">docs</span>, viral <span className="text-purple-400 font-semibold">tweets</span>, and blog <span className="text-green-400 font-semibold">posts</span>.</span>
-        </p>
-      </div>
-
-      {/* Main Interaction Zone */}
-      <div className="relative z-10 flex flex-col items-center justify-center mb-12 w-full">
-
-        {/* Waveform Visualizer */}
-        <div className="h-16 mb-4 flex flex-col items-center justify-end">
-          <Waveform isActive={isRecording} />
-        </div>
-
-        {/* The Big Button */}
-        <div className="relative group">
-          {/* Glow Effect */}
-          <div className={`absolute -inset-1 rounded-full blur-xl opacity-40 transition-all duration-500
-                ${isRecording ? 'bg-red-500 animate-pulse scale-110' : 'bg-cyan-500 group-hover:opacity-70 group-hover:scale-105'}
-            `}></div>
-
-          <button
-            onClick={toggleRecording}
-            disabled={isProcessing}
-            className={`
-                relative w-28 h-28 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl border-4
-                ${isRecording
-                ? 'bg-slate-900 border-red-500 text-red-500 scale-105'
-                : 'bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 text-cyan-400 hover:border-cyan-400 hover:text-cyan-300 hover:-translate-y-1'}
-                ${isProcessing ? 'opacity-50 cursor-not-allowed border-slate-700' : ''}
-            `}
-          >
-            {isProcessing ? (
-              <ArrowPathIcon className="w-10 h-10 animate-spin text-slate-400" />
-            ) : isRecording ? (
-              <StopIcon className="w-10 h-10" />
-            ) : (
-              <MicrophoneIcon className="w-10 h-10" />
-            )}
-          </button>
-        </div>
-
-        {/* Instructions / Status */}
-        <div className="mt-8 text-center h-8">
-          {isRecording ? (
-            <p className="text-red-400 font-medium tracking-wide animate-pulse uppercase text-sm">Recording in Progress</p>
-          ) : isProcessing ? (
-            <p className="text-cyan-400 font-medium tracking-wide animate-pulse uppercase text-sm">Processing thoughts...</p>
-          ) : (
-            <p className="text-slate-500 text-sm font-medium">Tap to start • Tap to stop & generate</p>
-          )}
-        </div>
-      </div>
-
-      {/* Configuration Panel */}
-      <div className={`w-full max-w-4xl transition-all duration-500 ease-in-out ${isRecording ? 'opacity-20 pointer-events-none blur-sm grayscale' : 'opacity-100'}`}>
-        <div className="bg-slate-800/40 border border-slate-700/50 backdrop-blur-xl rounded-2xl p-1 shadow-2xl overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-700/50">
-            <div className="p-6">
-              <label className="flex items-center gap-2 text-xs font-bold text-cyan-400 uppercase tracking-wider mb-4">
-                <DocumentTextIcon className="w-4 h-4" /> Output Format
-              </label>
-              <div className="space-y-1">
-                {['DESIGN_FEEDBACK', 'MEETING_NOTES', 'BUG_REPORT', 'EMAIL_DRAFT', 'LINKEDIN_POST', 'TWEET_THREAD', 'BLOG_POST'].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setConfig({ ...config, docType: type as DocType })}
-                    className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${config.docType === type
-                      ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 shadow-lg shadow-cyan-900/20 font-medium'
-                      : 'hover:bg-slate-700/50 text-slate-400'
-                      }`}
-                  >
-                    {type.replace('_', ' ')}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="p-6">
-              <label className="flex items-center gap-2 text-xs font-bold text-purple-400 uppercase tracking-wider mb-4">
-                <SparklesIcon className="w-4 h-4" /> Writing Style
-              </label>
-              <div className="grid grid-cols-1 gap-2">
-                {['PROFESSIONAL', 'CREATIVE', 'DIRECT', 'TECHNICAL'].map((style) => (
-                  <button
-                    key={style}
-                    onClick={() => setConfig({ ...config, style: style as WritingStyle })}
-                    className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${config.style === style
-                      ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20 shadow-lg shadow-purple-900/20 font-medium'
-                      : 'hover:bg-slate-700/50 text-slate-400'
-                      }`}
-                  >
-                    {style}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="p-6">
-              <label className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4">
-                <DocumentTextIcon className="w-4 h-4" /> Detail Level
-              </label>
-              <div className="flex flex-col gap-2">
-                {['CONCISE', 'BALANCED', 'DETAILED'].map((len) => (
-                  <button
-                    key={len}
-                    onClick={() => setConfig({ ...config, length: len as DocLength })}
-                    className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${config.length === len
-                      ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shadow-lg shadow-emerald-900/20 font-medium'
-                      : 'hover:bg-slate-700/50 text-slate-400'
-                      }`}
-                  >
-                    {len}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Live Transcript Display */}
-      {(transcript || finalTranscript) && isRecording && (
-        <div className="fixed bottom-10 left-0 right-0 mx-auto w-full flex flex-col items-center gap-4 z-50 px-6">
-          <div className="w-full max-w-3xl bg-slate-900/90 backdrop-blur-md border border-slate-700 p-6 rounded-2xl shadow-2xl text-center pointer-events-none">
-            <p className="text-slate-300 text-lg leading-relaxed font-light">
-              <span className="opacity-60">{finalTranscript}</span>
-              <span className="text-cyan-400 font-medium">{transcript}</span>
-            </p>
-          </div>
-          <ProgressBar
-            current={recordingSeconds}
-            max={currentLimit}
-            isPro={isPro}
-            onUpgrade={() => setShowUpsell(true)}
-          />
-        </div>
-      )}
-
-      {/* Results Section */}
-      {result && (
-        <div ref={resultRef} className="w-full max-w-4xl mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-
-          {/* Actions Bar */}
-          <div className="flex justify-between items-end mb-4 px-2">
-            <h2 className="text-xl font-bold text-slate-200 flex items-center gap-2">
-              <SparklesIcon className="w-5 h-5 text-purple-400" />
-              Generated Output
-            </h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setIsEditingTranscript(!isEditingTranscript)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${isEditingTranscript
-                  ? 'bg-slate-700 border-slate-600 text-white'
-                  : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
-                  }`}
-              >
-                {isEditingTranscript ? <XMarkIcon className="w-4 h-4" /> : <PencilSquareIcon className="w-4 h-4" />}
-                {isEditingTranscript ? 'Cancel Edit' : 'Refine Input'}
-              </button>
-              <button
-                onClick={downloadResult}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 font-medium transition-colors"
-              >
-                <ArrowDownTrayIcon className="w-4 h-4" />
-                Download
-              </button>
-              <button
-                id="copy-btn"
-                onClick={copyToClipboard}
-                className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-sm text-white font-bold transition-colors shadow-lg shadow-cyan-900/20"
-              >
-                <ClipboardDocumentCheckIcon className="w-4 h-4" />
-                Copy
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-slate-800/80 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm">
-
-            {/* Editing Mode */}
-            {isEditingTranscript && (
-              <div className="p-6 bg-slate-900/50 border-b border-slate-700">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider">Original Transcript</h3>
-                  <span className="text-xs text-slate-500">Edit any mistakes below</span>
-                </div>
-                <textarea
-                  value={editableTranscript}
-                  onChange={(e) => setEditableTranscript(e.target.value)}
-                  className="w-full h-40 bg-slate-900 border border-slate-600 rounded-lg p-4 text-slate-300 text-sm leading-relaxed focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none resize-y"
-                />
-                <div className="flex justify-end mt-4">
-                  <button
-                    onClick={handleRegenerate}
-                    disabled={isProcessing}
-                    className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    <ArrowPathIcon className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
-                    Regenerate Document
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Document Display */}
-            <div className="p-8 md:p-12 min-h-[300px] bg-slate-800/50">
-              <MarkdownRenderer content={result} />
-            </div>
-
-            {/* Integration Footer (Upsell) */}
-            <div className="bg-slate-900/80 p-5 border-t border-slate-700/50">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Export & Schedule</p>
-              <div className="flex flex-wrap gap-3">
-                {/* Work Buttons */}
-                <button
-                  onClick={() => setShowUpsell(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-slate-100 text-slate-900 text-sm font-bold hover:bg-white hover:scale-[1.02] transition-all shadow-lg shadow-slate-900/20"
-                >
-                  <QueueListIcon className="w-4 h-4" />
-                  Notion
-                </button>
-
-                {/* Social Buttons */}
-                <button
-                  onClick={() => setShowUpsell(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0077B5] text-white text-sm font-bold hover:bg-[#0077B5]/90 hover:scale-[1.02] transition-all shadow-lg shadow-blue-900/20"
-                >
-                  <ShareIcon className="w-4 h-4" />
-                  Post to LinkedIn
-                </button>
-                <button
-                  onClick={() => setShowUpsell(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-black text-white border border-slate-700 text-sm font-bold hover:bg-slate-900 hover:scale-[1.02] transition-all shadow-lg"
-                >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
-                  Post to X
-                </button>
-                <button
-                  onClick={() => setShowUpsell(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-slate-700 text-white text-sm font-bold hover:bg-slate-600 hover:scale-[1.02] transition-all shadow-lg"
-                >
-                  <GlobeAltIcon className="w-4 h-4" />
-                  Publish to Blog
-                </button>
-              </div>
-            </div>
-
-            {/* Meta Footer */}
-            <div className="bg-slate-900/50 px-5 py-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-600">
-              <span>Generated with Gemini 1.5 Flash</span>
-              <span>{new Date().toLocaleDateString()} • {editableTranscript.length} chars</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error Toast */}
-      {error && (
-        <div className="fixed bottom-8 right-8 z-50 bg-red-900/90 text-red-100 px-6 py-4 rounded-xl shadow-2xl border border-red-700 animate-in slide-in-from-bottom-4 duration-300">
-          <p className="font-medium">{error}</p>
-        </div>
-      )}
-
     </div>
   );
 }

@@ -1,63 +1,73 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ink-base: #0a0a0a;
+  /* Deepest Black/Ink */
+  --color-ink-surface: #171717;
+  /* Charcoal Surface */
+  --color-ink-border: #262626;
+  /* Subtle Border */
+  --color-paper-text: #e5e5e5;
+  /* Warm Off-White */
+  --color-paper-muted: #a3a3a3;
+  /* Muted Text */
+  --color-oxide-red: #c2410c;
+  /* Burnt Orange/Red Accent */
+  --color-industrial-brass: #b45309;
+  /* Muted Brass Accent */
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui;
+  --font-serif: var(--font-plex-serif), ui-serif, Georgia;
+}
+
 @layer base {
   body {
-    @apply bg-slate-900 text-slate-100;
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    @apply bg-ink-base text-paper-text;
+    font-feature-settings: "ss01", "ss02";
+    /* Technical alternate glyphs */
   }
 
-  /* Custom Scrollbar */
+  /* Editorial Selection Style */
+  ::selection {
+    @apply bg-oxide-red/30 text-white;
+  }
+
+  /* Custom Scrollbar - Minimal/Mechanical */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 4px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #1e293b;
+    @apply bg-transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
+    @apply bg-ink-border hover:bg-paper-muted transition-colors duration-200;
   }
 }
 
 @layer utilities {
-  @keyframes wave {
 
-    0%,
-    100% {
-      height: 10%;
-    }
-
-    50% {
-      height: 100%;
-    }
+  /* Mechanical/Instant Transitions */
+  .transition-mechanical {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0, 0, 0, 1);
+    /* Instant snap */
+    transition-duration: 200ms;
   }
 
-  .animate-wave {
-    animation: wave 1s ease-in-out infinite;
+  /* Physical Button Press Effect */
+  .press-effect:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
   }
 
-  @keyframes gradient {
-    0% {
-      background-position: 0% 50%;
-    }
-
-    50% {
-      background-position: 100% 50%;
-    }
-
-    100% {
-      background-position: 0% 50%;
-    }
+  /* Analog Meter Ticks */
+  .meter-tick {
+    @apply w-[2px] bg-ink-border transition-mechanical h-2;
   }
 
-  .animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient 3s ease infinite;
+  .meter-tick.active {
+    @apply bg-oxide-red h-full;
   }
 }
