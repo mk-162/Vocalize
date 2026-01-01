@@ -31,6 +31,7 @@ export async function processTranscript(
     - Tone/Style: ${config.style}
 
     Guidelines based on format:
+    - SUMMARY: Create a concise, high-level overview of the main ideas and takeaways.
     - DESIGN_FEEDBACK: Use sections like "Visuals", "UX/Usability", "Copy", and "Action Items".
     - MEETING_NOTES: Extract "Key Points", "Decisions Made", and "Action Items".
     - BUG_REPORT: Format as "Observed Behavior", "Expected Behavior", "Steps to Reproduce" (inferred).
@@ -39,13 +40,13 @@ export async function processTranscript(
     - TWEET_THREAD: Series of short tweets numbered (1/x), punchy, viral style, no hashtags in middle of text.
     - BLOG_POST: Catchy Title, Introduction, H2 Headers for sections, Conclusion.
 
-    Constraints:
-    - Fix grammar and stuttering.
-    - Remove filler words (um, ah, like).
-    - Do NOT make up facts not present in the transcript.
-    - Use Markdown for formatting.
-    - For lists, use hyphens (-) not asterisks (*).
-    - Output ONLY the formatted content.
+    Guidelines based on style:
+    - CONVERSATIONAL: Write as if speaking naturally to a friend or colleague. Warm, accessible, and not overly stiff.
+    - PROFESSIONAL: Polished, business-appropriate, and objective.
+    - CREATIVE: Expressive, evocative, and compelling.
+    - DIRECT: Concise, to the point, no fluff.
+    - TECHNICAL: Precise, detailed, and using appropriate terminology.
+    - OBSERVED BEHAVIOR: Output ONLY the requested format.
   `;
 
     try {
@@ -54,6 +55,6 @@ export async function processTranscript(
         return response.text() || "Failed to generate content.";
     } catch (error) {
         console.error("Gemini API Error:", error);
-        throw new Error("Failed to process transcript with AI.");
+        throw new Error(`Gemini API Error: ${error instanceof Error ? error.message : String(error)}`);
     }
 }

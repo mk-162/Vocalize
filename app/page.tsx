@@ -15,7 +15,8 @@ import {
   StopIcon,
   ClockIcon,
   ArchiveBoxIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  SparklesIcon
 } from '@heroicons/react/24/solid';
 
 // --- Components ---
@@ -74,7 +75,7 @@ const UpsellModal = ({ isOpen, onClose, onUpgrade, mode = 'UPGRADE' }: { isOpen:
         {/* Features */}
         <div className="p-8 space-y-6">
           <div className="flex items-start gap-4">
-            <div className="w-8 h-8 rounded-full bg-ink-base border border-ink-border flex items-center justify-center text-oxide-red flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-ink-base border border-ink-border flex items-center justify-center text-oxide-red shrink-0">
               <ClockIcon className="w-4 h-4" />
             </div>
             <div>
@@ -83,7 +84,7 @@ const UpsellModal = ({ isOpen, onClose, onUpgrade, mode = 'UPGRADE' }: { isOpen:
             </div>
           </div>
           <div className="flex items-start gap-4">
-            <div className="w-8 h-8 rounded-full bg-ink-base border border-ink-border flex items-center justify-center text-oxide-red flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-ink-base border border-ink-border flex items-center justify-center text-oxide-red shrink-0">
               <QueueListIcon className="w-4 h-4" />
             </div>
             <div>
@@ -92,7 +93,7 @@ const UpsellModal = ({ isOpen, onClose, onUpgrade, mode = 'UPGRADE' }: { isOpen:
             </div>
           </div>
           <div className="flex items-start gap-4">
-            <div className="w-8 h-8 rounded-full bg-ink-base border border-ink-border flex items-center justify-center text-oxide-red flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-ink-base border border-ink-border flex items-center justify-center text-oxide-red shrink-0">
               <ShareIcon className="w-4 h-4" />
             </div>
             <div>
@@ -129,7 +130,6 @@ const CopyButton = ({ text }: { text: string }) => {
   const handleCopy = (mode: 'TEXT' | 'MARKDOWN') => {
     navigator.clipboard.writeText(text);
     setIsOpen(false);
-    // Toast logic could go here
   };
 
   return (
@@ -169,11 +169,13 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
 
   // App State
-  const [isRecording, setIsRecording] = useState(false);
+  // 'CONFIG' | 'RECORDING' | 'GENERATING' | 'RESULT'
+  const [appState, setAppState] = useState<'CONFIG' | 'RECORDING' | 'GENERATING' | 'RESULT'>('CONFIG');
+
   const [transcript, setTranscript] = useState('');
   const [finalTranscript, setFinalTranscript] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   // UI & Tier State
   const [isPro, setIsPro] = useState(false);
@@ -212,11 +214,11 @@ export default function Home() {
   // Timer Logic
   useEffect(() => {
     let interval: any;
-    if (isRecording) {
+    if (appState === 'RECORDING') {
       interval = setInterval(() => {
         setRecordingSeconds(prev => {
           if (prev >= currentLimit) {
-            toggleRecording();
+            stopRecording();
             if (!isPro) {
               setUpsellMode('UPGRADE');
               setShowUpsell(true);
@@ -230,7 +232,7 @@ export default function Home() {
       setRecordingSeconds(0);
     }
     return () => clearInterval(interval);
-  }, [isRecording, currentLimit, isPro]);
+  }, [appState, currentLimit, isPro]);
 
   // Speech Recognition
   useEffect(() => {
@@ -257,35 +259,47 @@ export default function Home() {
     }
   }, []);
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-      handleProcess();
-    } else {
-      setFinalTranscript('');
-      setTranscript('');
-      setResult('');
-      recognitionRef.current?.start();
-      setIsRecording(true);
-    }
+  const startRecording = () => {
+    setFinalTranscript('');
+    setTranscript('');
+    setResult('');
+    setError(null);
+    recognitionRef.current?.start();
+    setAppState('RECORDING');
+  };
+
+  const stopRecording = () => {
+    recognitionRef.current?.stop();
+    setAppState('GENERATING');
+    handleProcess();
   };
 
   const handleProcess = async () => {
     const text = (finalTranscript + ' ' + transcript).trim();
-    if (!text) return;
-    setIsProcessing(true);
+    if (!text) {
+      // Did not capture audio
+      setAppState('CONFIG');
+      return;
+    }
+
     try {
-      const content = await processTranscript(text, config);
+      // Simulate delay for animation if API is too fast
+      const [content] = await Promise.all([
+        processTranscript(text, config),
+        new Promise(resolve => setTimeout(resolve, 1500)) // Min 1.5s animation
+      ]);
+
       setResult(content);
-      // Auto-scroll to result
+      setAppState('RESULT');
+
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 500);
+
     } catch (e) {
       console.error(e);
-    } finally {
-      setIsProcessing(false);
+      setError(e instanceof Error ? e.message : "An error occurred");
+      setAppState('RESULT'); // Show error state
     }
   };
 
@@ -339,182 +353,221 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-3xl mx-auto pt-32 pb-20 px-6 flex flex-col items-center gap-8 md:gap-12">
+      <main className="flex-1 w-full max-w-4xl mx-auto pt-24 pb-20 px-6 flex flex-col items-center gap-6">
 
-        {/* Hero Copy */}
-        <div className="text-center space-y-2 mb-2 animate-in fade-in slide-in-from-top-4 duration-700">
+        {/* Hero Copy (Simplified) */}
+        <div className="text-center space-y-2 mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
           <p className="text-3xl md:text-4xl text-paper-text font-light italic">
             Stop typing. Just talk.
           </p>
         </div>
 
-        {/* --- THE INSTRUMENT CORE --- */}
-        <div className="flex flex-col items-center gap-6 w-full max-w-md">
+        {/* --- THE INSTRUMENT BOX (Unified Interface) --- */}
+        <div className="w-full bg-ink-surface/30 border border-ink-border/50 rounded-sm relative overflow-hidden transition-all duration-500 min-h-[400px] flex flex-col">
 
-          {/* 1. Record Button */}
-          <div className="relative group z-10">
-            {/* Active Glow */}
-            <div className={`absolute -inset-10 rounded-full blur-3xl opacity-20 transition-all duration-500 ${isRecording ? 'bg-oxide-red scale-110' : 'bg-transparent'}`} />
-
-            <button
-              onClick={toggleRecording}
-              disabled={isProcessing}
-              className={`
-                  relative w-28 h-28 rounded-full border border-ink-border transition-all duration-200 ease-out 
-                  flex items-center justify-center shadow-2xl overflow-hidden
-                  ${isRecording
-                  ? 'bg-ink-surface border-oxide-red shadow-[0_0_50px_rgba(234,88,12,0.2)] scale-105'
-                  : 'bg-ink-surface hover:bg-ink-surface/80 hover:border-paper-muted hover:-translate-y-0.5'}
-                `}
-            >
-              <div className="flex items-center gap-2">
-                {isRecording ? (
-                  <>
-                    <StopIcon className="w-8 h-8 text-oxide-red" />
-                    <MechanicalMeter isActive={true} />
-                  </>
-                ) : (
-                  <MicrophoneIcon className="w-8 h-8 text-paper-muted group-hover:text-paper-text transition-colors" />
-                )}
+          {/* STATE: GENERATING ANIMATION */}
+          {appState === 'GENERATING' && (
+            <div className="absolute inset-0 bg-ink-base z-20 flex flex-col items-center justify-center animate-in fade-in duration-300">
+              <div className="relative">
+                <div className="absolute -inset-4 bg-oxide-red/20 blur-xl rounded-full animate-pulse" />
+                <SparklesIcon className="w-12 h-12 text-oxide-red animate-spin-slow" />
               </div>
-            </button>
+              <p className="mt-6 text-xs font-mono uppercase tracking-[0.3em] text-paper-muted animate-pulse">
+                Structuring Thought...
+              </p>
+            </div>
+          )}
+
+          {/* HEADER OF BOX: Timer & Controls */}
+          <div className="h-14 border-b border-ink-border flex items-center justify-between px-6 bg-ink-surface/50">
+            <div className="flex items-center gap-4">
+              {/* Timer */}
+              <span className={`text-[12px] font-mono ${appState === 'RECORDING' ? 'text-oxide-red font-bold animate-pulse' : 'text-paper-muted'}`}>
+                {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}
+              </span>
+
+              {/* Progress Bar */}
+              <div className="w-24 md:w-48 h-1 bg-ink-base border border-ink-border rounded-full relative overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-1000 ease-linear ${recordingSeconds > FREE_LIMIT * 0.9 && !isPro ? 'bg-red-500 animate-pulse' : 'bg-oxide-red'}`}
+                  style={{ width: `${Math.min((recordingSeconds / currentLimit) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* State Indicators */}
+            <div className="flex items-center gap-3">
+              {appState === 'RECORDING' && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-oxide-red/10 border border-oxide-red/20 rounded-full">
+                  <div className="w-1.5 h-1.5 rounded-full bg-oxide-red animate-pulse" />
+                  <span className="text-[9px] uppercase tracking-widest font-bold text-oxide-red">Live Input</span>
+                </div>
+              )}
+              {!isPro && appState !== 'RECORDING' && (
+                <span className="text-[9px] uppercase tracking-widest font-bold text-paper-muted">2:00 Limit</span>
+              )}
+            </div>
           </div>
 
-          {/* 2. Transcript & Output Display (Between Mic and Timer) */}
-          <div className="w-full min-h-[140px] relative">
-            {/* Placeholder / Empty State */}
-            {!result && !isRecording && !isProcessing && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 border border-dashed border-ink-border rounded-sm opacity-50">
-                <p className="text-sm text-paper-muted mb-2 font-sans">Ready to capture.</p>
-                <p className="text-[10px] uppercase tracking-widest text-paper-muted/60">Defaults: Summary / Conversational</p>
-              </div>
-            )}
+          {/* BODY OF BOX */}
+          <div className="flex-1 relative flex flex-col">
 
-            {/* Active Transcript / Processing */}
-            {(isRecording || isProcessing) && !result && (
-              <div className="w-full h-full p-6 bg-ink-surface/50 border border-ink-border rounded-sm backdrop-blur-sm animate-in fade-in">
-                <div className="flex items-center gap-3 text-oxide-red font-mono text-[10px] uppercase tracking-widest mb-3">
-                  {isProcessing ? '/// PROCESSING...' : '/// RECORDING...'}
-                </div>
-                <p className="font-serif text-lg leading-relaxed text-paper-text line-clamp-4">
-                  {finalTranscript} <span className="text-paper-muted/70">{transcript}</span>
-                </p>
-              </div>
-            )}
-
-            {/* Final Result */}
-            {result && (
-              <div ref={resultRef} className="w-full bg-ink-surface border border-ink-border rounded-sm p-8 shadow-2xl relative group animate-in zoom-in-95 duration-300">
-                {/* Result Header */}
-                <div className="absolute top-0 left-0 right-0 h-10 border-b border-ink-border bg-ink-base/50 flex items-center justify-between px-4">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-oxide-red/40" />
-                    <div className="w-2 h-2 rounded-full bg-paper-muted/20" />
-                    <div className="w-2 h-2 rounded-full bg-paper-muted/20" />
-                  </div>
-                  <CopyButton text={result} />
-                </div>
-
-                {/* Result Content */}
-                <div className="mt-8 mb-4 prose prose-invert prose-p:text-paper-text prose-headings:font-normal prose-sm max-w-none font-serif leading-relaxed">
-                  <p className="whitespace-pre-wrap">{result}</p>
-                </div>
-
-                {/* Result Footer: Integrations & Upgrade */}
-                <div className="border-t border-ink-border pt-4 mt-6">
-                  {!isPro && (
-                    <button onClick={() => { setUpsellMode('UPGRADE'); setShowUpsell(true); }} className="w-full flex items-center justify-between bg-ink-base p-3 rounded-sm border border-ink-border hover:border-oxide-red transition-colors group/banner mb-4">
-                      <span className="text-[10px] uppercase font-bold text-paper-muted group-hover/banner:text-oxide-red">Unlock Full History & Integrations</span>
-                      <span className="text-[10px] uppercase font-bold text-oxide-red flex items-center gap-1">Upgrade <StarIcon className="w-3 h-3" /></span>
+            {/* 1. CONFIG STATE (Ready) */}
+            {appState === 'CONFIG' && (
+              <div className="flex-1 flex flex-col md:flex-row animate-in fade-in duration-500">
+                {/* LEFT: Record Trigger */}
+                <div className="flex-1 flex flex-col items-center justify-center p-8 border-r border-ink-border/50">
+                  <div className="relative group cursor-pointer" onClick={startRecording}>
+                    <div className="absolute -inset-8 bg-oxide-red/5 rounded-full blur-xl group-hover:bg-oxide-red/10 transition-all duration-500" />
+                    <button
+                      className="relative w-24 h-24 rounded-full bg-ink-surface border border-ink-border shadow-2xl flex items-center justify-center group-hover:scale-105 group-hover:border-paper-muted transition-all duration-300"
+                    >
+                      <MicrophoneIcon className="w-8 h-8 text-paper-muted group-hover:text-paper-text transition-colors" />
                     </button>
-                  )}
+                  </div>
+                  <p className="mt-8 text-sm font-serif italic text-paper-muted">"Tap to start..."</p>
+                </div>
 
-                  <div className="flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity">
-                    <span className="text-[9px] uppercase tracking-widest font-bold text-paper-muted self-center">Send to:</span>
-                    <div className="flex gap-3">
-                      <button onClick={() => setShowUpsell(true)} className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold text-paper-muted hover:text-paper-text hover:underline transition-all">
-                        <QueueListIcon className="w-3 h-3" /> Notion
-                      </button>
-                      <button onClick={() => setShowUpsell(true)} className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold text-paper-muted hover:text-paper-text hover:underline transition-all">
-                        <ShareIcon className="w-3 h-3" /> LinkedIn
-                      </button>
-                      <button onClick={() => setShowUpsell(true)} className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-bold text-paper-muted hover:text-paper-text hover:underline transition-all">
-                        <GlobeAltIcon className="w-3 h-3" /> WordPress
-                      </button>
+                {/* RIGHT: Configuration Grid (2x2) */}
+                <div className="flex-1 p-8 grid grid-cols-2 gap-4 bg-ink-base/30">
+                  {/* Doc Type Selector */}
+                  <div className="col-span-2 space-y-2">
+                    <label className="text-[9px] uppercase tracking-widest font-bold text-paper-muted">Format</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['SUMMARY', 'EMAIL', 'NOTES', 'SOCIAL'].map((t) => {
+                        // Mapping specific labels to internal types for cleaner UI
+                        const typeMap: any = { 'SUMMARY': 'SUMMARY', 'EMAIL': 'EMAIL_DRAFT', 'NOTES': 'MEETING_NOTES', 'SOCIAL': 'LINKEDIN_POST' };
+                        const isActive = config.docType === typeMap[t];
+                        return (
+                          <button
+                            key={t}
+                            onClick={() => setConfig({ ...config, docType: typeMap[t] })}
+                            className={`h-10 text-[9px] font-bold uppercase tracking-wide border rounded-sm transition-all
+                                                    ${isActive
+                                ? 'bg-oxide-red text-white border-oxide-red'
+                                : 'bg-transparent text-paper-muted border-ink-border hover:border-paper-muted hover:text-paper-text'}
+                                                `}
+                          >
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Style Selector */}
+                  <div className="col-span-2 space-y-2 mt-2">
+                    <label className="text-[9px] uppercase tracking-widest font-bold text-paper-muted">Tone</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['CASUAL', 'PRO', 'DIRECT', 'CREATIVE'].map((s) => {
+                        const styleMap: any = { 'CASUAL': 'CONVERSATIONAL', 'PRO': 'PROFESSIONAL', 'DIRECT': 'DIRECT', 'CREATIVE': 'CREATIVE' };
+                        const isActive = config.style === styleMap[s];
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => setConfig({ ...config, style: styleMap[s] })}
+                            className={`h-10 text-[9px] font-bold uppercase tracking-wide border rounded-sm transition-all
+                                                    ${isActive
+                                ? 'bg-ink-surface border-oxide-red text-oxide-red'
+                                : 'bg-transparent text-paper-muted border-ink-border hover:border-paper-muted hover:text-paper-text'}
+                                                `}
+                          >
+                            {s}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
               </div>
             )}
-          </div>
 
-          {/* 3. Timer & Limits */}
-          <div className="w-full flex items-center gap-4">
-            <span className="text-[10px] font-mono text-paper-muted">{Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}</span>
+            {/* 2. RECORDING STATE */}
+            {appState === 'RECORDING' && (
+              <div className="flex-1 flex flex-col relative animate-in zoom-in-95 duration-300">
+                {/* Scrolling Text Field */}
+                <div className="flex-1 p-8 overflow-y-auto max-h-[400px] scrollbar-thin scrollbar-thumb-ink-border scrollbar-track-transparent">
+                  <p className="font-serif text-lg leading-relaxed text-paper-text/90 whitespace-pre-wrap">
+                    {finalTranscript} <span className="text-paper-muted">{transcript}</span>
+                    <span className="inline-block w-1.5 h-4 ml-1 bg-oxide-red animate-pulse align-middle" />
+                  </p>
+                </div>
 
-            {/* Progress Bar */}
-            <div className="flex-1 h-1 bg-ink-surface border border-ink-border rounded-full relative overflow-hidden">
-              <div
-                className={`h-full transition-all duration-1000 ease-linear ${recordingSeconds > FREE_LIMIT * 0.9 && !isPro ? 'bg-red-500 animate-pulse' : 'bg-oxide-red'}`}
-                style={{ width: `${Math.min((recordingSeconds / currentLimit) * 100, 100)}%` }}
-              />
-            </div>
+                {/* Bottom Control Bar */}
+                <div className="h-20 border-t border-ink-border bg-ink-base/80 backdrop-blur flex items-center justify-between px-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-ink-surface border border-ink-border flex items-center justify-center">
+                      <StopIcon className="w-4 h-4 text-oxide-red animate-pulse" /> {/* Replaced mic with stop icon/eq concept */}
+                    </div>
+                    <div className="text-xs uppercase tracking-widest text-paper-muted font-bold">Recording...</div>
+                  </div>
 
-            {isPro ? (
-              <span className="text-[10px] font-sans font-bold text-oxide-red uppercase tracking-wider">PRO 30:00</span>
-            ) : (
-              <button onClick={() => { setUpsellMode('UPGRADE'); setShowUpsell(true); }} className="text-[9px] font-sans font-bold text-paper-muted hover:text-oxide-red transition-colors uppercase tracking-wider whitespace-nowrap">
-                Limit 2:00 <span className="underline decoration-oxide-red">Upgrade</span>
-              </button>
+                  {/* Main Stop Action */}
+                  <button
+                    onClick={stopRecording}
+                    className="h-10 px-6 bg-oxide-red hover:bg-orange-700 text-white rounded-sm flex items-center gap-2 transition-all shadow-lg shadow-oxide-red/20"
+                  >
+                    <span className="text-[10px] uppercase tracking-widest font-bold">Finish</span>
+                    <div className="w-4 h-4 rounded-sm bg-white/20 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-[1px]" />
+                    </div>
+                  </button>
+                </div>
+              </div>
             )}
-          </div>
 
-        </div>
+            {/* 4. RESULT STATE */}
+            {appState === 'RESULT' && (
+              <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Result Text */}
+                <div ref={resultRef} className="flex-1 p-8 overflow-y-auto max-h-[500px] scrollbar-thin scrollbar-thumb-ink-border scrollbar-track-transparent">
+                  {error ? (
+                    <div className="p-4 bg-red-950/20 border border-red-900/50 rounded-sm">
+                      <p className="text-sm text-red-200">{error}</p>
+                      <button onClick={() => setAppState('CONFIG')} className="mt-4 text-xs text-red-500 underline">Reset</button>
+                    </div>
+                  ) : (
+                    <div className="prose prose-invert prose-p:text-paper-text prose-headings:font-normal prose-sm max-w-none font-serif leading-relaxed">
+                      <p className="whitespace-pre-wrap">{result}</p>
+                    </div>
+                  )}
+                </div>
 
-        {/* 5. Configuration Deck (Visible) */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl border-t border-ink-border pt-8 pb-12">
-          {/* Format Selection */}
-          <div className="space-y-3">
-            <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-paper-muted flex items-center gap-2">
-              <span className="w-1 h-1 bg-oxide-red rounded-full"></span> Output Format
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {['SUMMARY', 'DESIGN_FEEDBACK', 'MEETING_NOTES', 'EMAIL_DRAFT'].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setConfig({ ...config, docType: t as DocType })}
-                  className={`
-                    h-10 w-full btn-instrument flex items-center justify-center text-[10px]
-                    ${config.docType === t ? 'btn-instrument-active' : ''}
-                  `}
-                >
-                  {t.replace('_', ' ')}
-                </button>
-              ))}
-            </div>
-          </div>
+                {/* Result Actions Footer */}
+                <div className="border-t border-ink-border p-4 bg-ink-base/50 flex flex-col md:flex-row gap-4 justify-between items-center">
 
-          {/* Style Selection */}
-          <div className="space-y-3">
-            <label className="text-[10px] uppercase tracking-[0.15em] font-bold text-paper-muted flex items-center gap-2">
-              <span className="w-1 h-1 bg-oxide-red rounded-full"></span> Writing Style
-            </label>
-            <div className="grid grid-cols-1 gap-2">
-              {['CONVERSATIONAL', 'PROFESSIONAL', 'DIRECT', 'CREATIVE'].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setConfig({ ...config, style: s as WritingStyle })}
-                  className={`
-                    h-10 w-full btn-instrument flex items-center justify-center text-[10px]
-                    ${config.style === s ? 'btn-instrument-active' : ''}
-                  `}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+                  <button onClick={() => { setAppState('CONFIG'); setResult(''); setFinalTranscript(''); }} className="text-[10px] uppercase font-bold text-paper-muted hover:text-paper-text transition-colors px-4">
+                    ← New Note
+                  </button>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-2 border-r border-ink-border pr-4 mr-2">
+                      <button onClick={() => setShowUpsell(true)} className="w-8 h-8 flex items-center justify-center rounded-sm hover:bg-ink-surface text-paper-muted hover:text-white transition-colors">
+                        <QueueListIcon className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setShowUpsell(true)} className="w-8 h-8 flex items-center justify-center rounded-sm hover:bg-ink-surface text-paper-muted hover:text-white transition-colors">
+                        <ShareIcon className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setShowUpsell(true)} className="w-8 h-8 flex items-center justify-center rounded-sm hover:bg-ink-surface text-paper-muted hover:text-white transition-colors">
+                        <GlobeAltIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <CopyButton text={result} />
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
+
+        {/* Helper Text below box */}
+        {appState === 'CONFIG' && !isPro && (
+          <div className="flex items-center gap-2 opacity-50 text-[10px] uppercase tracking-widest text-paper-muted">
+            <span>•</span> Limit 2:00 per note <span>•</span>
+          </div>
+        )}
+
       </main>
 
       {/* Footer */}
